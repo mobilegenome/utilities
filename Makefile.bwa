@@ -1,0 +1,59 @@
+#
+# Makefile.bwa -using make to call bwa mem, convert sam -> bam, sort and mark duplicates with picard
+# use: make -f Makefile.bwa  (-k #for debugging) 
+# 
+# before use, set variables to set with command line and call bwa index on reference FASTA
+# Requirements
+# - qualimap bamqc
+# - bwa 
+# - Picard 
+# - samtools 
+#
+
+# VARIABLES
+REFERENCE= # reference FASTA with bwa index 
+SAMPLE= # filename prefix of sample
+PICARDPATH=~/programs/picard-2.80/picard.jar
+READGROUP="@RG\tID:balPhyPE300\tSM:balPhy\tPL:ILLUMINA\tLB:balPhy_PE300_5" # readgroup string
+
+# files to be created
+
+all: \
+	$(SAMPLE).PE300_5.sorted.mkdup.bam.bai \
+	$(SAMPLE).PE300_5.sorted.mkdup.bam \
+	$(SAMPLE).PE300_5.sorted.bam \
+	$(SAMPLE).PE300_5.bam \
+	$(SAMPLE).PE300_5.sorted.mkdup.flagstat \
+	$(SAMPLE).PE300_5.qualimap.out 
+
+# bwa mem
+$(SAMPLE).PE300_5.sam: MATE1_FASTQFILE MATE2_FASTQFILE # fastqfiles
+	bwa mem -t 8 -R $(READGROUP)   $(REFERENCE) $^ > $@
+
+# sam->bam conversion
+%.unsorted.bam: %.sam
+	samtools view -T $(REFERENCE)  -Sb $< > $@
+	rm $<
+
+# sort bam
+%.sorted.bam: %.unsorted.bam
+	samtools sort -@ 8 -m 5G  $< > $@
+	rm $<
+
+# mark duplicates
+%.sorted.mkdup.bam: %.sorted.bam
+	java -Xmx2g -jar $$PICARDPATH MarkDuplicates MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 I=$< O=$@ M=$@.mkdup_metrics  
+
+# flagstat
+%.sorted.mkdup.flagstat: %.sorted.mkdup.bam
+	samtools flagstat  $< > $@
+
+# index bam
+%.sorted.mkdup.bam.bai: %.sorted.mkdup.bam
+	samtools index $<
+
+# bamqc 
+%.qualimap.out: %.sorted.mkdup.bam %.sorted.mkdup.bam.bai
+	qualimap bamqc -nt 8 -sd -bam $< --java-mem-size=4G > $@
+
+
