@@ -1,8 +1,9 @@
 #!/usr/bin/python
-__author__ = 'newuser'
+
+__author__ = 'Fritjof Lammers'
 
 '''
-This program counts phylogenetic content in terms of numbers of phylogenetic informative sites
+This program counts phylogenetic content in terms of numbers of phylogenetic informative sites for a pair of sequences. 
 '''
 
 
@@ -85,9 +86,9 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('-i', '--input_path', required=True, action="store", help='Path to input files (genome fragments)')
+    parser.add_argument('-i', '--input_path', required=True, action="store", help='Path to input files (genome fragments). Must be a folder with .fasta files containing the aligned genomic sequences. ')
     parser.add_argument('-o', '--output_file', required=True, action="store", help='Output file')
-    parser.add_argument('-t', '--taxa', required=False, action="append", help='selected taxa for genetic distance calculation')
+    parser.add_argument('-t', '--taxa', required=False, action="append", help='selected taxa for genetic distance calculation (optional) [random]')
     parser.add_argument('-r', '--random', required=False, action="store", type = float, help='Number of randomly selected fragments. Can also be percentage (as decimal)')
 
     options = parser.parse_args()
